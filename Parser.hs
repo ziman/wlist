@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Parser
     ( parse
     )
@@ -13,10 +14,16 @@ data AP = AP
     , apBssid :: String
     , apFreq :: Int
     , apSignal :: Float
-    , apStationCount :: Int
-    , apUtilisation :: (Int, Int)  -- fraction
+    , apStationCount :: Maybe Int
+    , apUtilisation :: Maybe (Int, Int)  -- fraction
     , apDetails :: [Item]
     }
+
+instance Show AP where
+    show AP{..} = unlines . map unwords $
+        [ [apEssid, apBssid]
+        , ["  ", show apSignal, show apStationCount]
+        ]
 
 parse :: String -> [AP]
 parse = map (parseAP . parseItem) . parseHI . map parseRI . lines
@@ -26,21 +33,21 @@ parseAP it@(L title subs)
     | Just essid <- get ["SSID"] subs
     , Just freq <- get ["freq"] subs
     , Just signal <- get ["signal"] subs
-    , Just stationCount <- get ["BSS Load","station count"] subs
-    , Just apUtil <- get ["BSS Load", "channel utilisation"] subs
+    , stationCount <- get ["BSS Load","station count"] subs
+    , apUtil <- get ["BSS Load", "channel utilisation"] subs
     = AP {
         apEssid = essid,
         apBssid = bssid title,
         apFreq = read freq,
         apSignal = read . fst $ span (/=' ') signal,
-        apStationCount = read stationCount,
-        apUtilisation =
+        apStationCount = read <$> stationCount,
+        apUtilisation = (\apUtil ->
           let (cnt, '/':tot) = span (/= '/') apUtil
-            in (read cnt, read tot),
-        apDetails = it
+            in (read cnt, read tot)) <$> apUtil,
+        apDetails = subs
     }
   where
-    bssid :: String
+    bssid :: String -> String
     bssid ('B':'S':'S':' ':rest) = fst $ span (/= '(') rest
     bssid s = error $ "can't parse BSSID from: " ++ show s
 
@@ -51,7 +58,7 @@ parseAP it@(L title subs)
     get (k:ks) (L k' subs : _) | k == k' = get ks subs
     get ks (_:is) = get ks is
 
-    get _ _ = Nothing
+    get ks _ = Nothing
 
 parseAP it = error $ "could not parse AP from " ++ show it
 
