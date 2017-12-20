@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Parser
     ( parse
+    , AP(..)
     )
     where
 
