@@ -6,10 +6,21 @@ module Parser
     where
 
 import Data.List
+import Data.Maybe
 
+-- Stage 1: raw items
 data RawItem = RI { riDepth :: Int, riContent :: String } deriving Show
+
+-- Stage 2: hierarchised items
 data HierItem = HI String [HierItem] deriving Show
-data Item = KV String String | L String [Item] deriving Show
+
+-- Stage 3: parsed items
+data Item
+    = KV String String  -- "key: value" item
+    | L String [Item]   -- captioned sublist of items
+    deriving Show
+
+-- Stage 4: AP from parsed items
 data AP = AP
     { apEssid :: String
     , apBssid :: String
@@ -29,11 +40,14 @@ instance Show AP where
 parse :: String -> [AP]
 parse = map (parseAP . parseItem) . parseHI . map parseRI . lines
 
+unwrap :: String -> Maybe a -> a
+unwrap = fromMaybe . error
+
 parseAP :: Item -> AP
 parseAP it@(L title subs)
-    | Just essid <- get ["SSID"] subs
-    , Just freq <- get ["freq"] subs
-    , Just signal <- get ["signal"] subs
+    | essid <- fromMaybe "(no essid)" $ get ["SSID"] subs
+    , freq <- unwrap "freq" $ get ["freq"] subs
+    , signal <- unwrap "signal" $ get ["signal"] subs
     , stationCount <- get ["BSS Load","station count"] subs
     , apUtil <- get ["BSS Load", "channel utilisation"] subs
     = AP {

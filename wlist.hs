@@ -19,5 +19,5 @@ fmtItem (essid, aps) = essid : map ("  " ++) subs
 
 main :: IO ()
 main = do
-    essids <- groupEssids . parse <$> getLines
+    essids <- groupEssids . parse <$> getContents
     putStr . unlines . concatMap fmtItem $ M.toList essids
