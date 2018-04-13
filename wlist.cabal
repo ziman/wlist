@@ -1,0 +1,23 @@
+name:                wlist
+version:             0.1.0.0
+synopsis:            Interactive WiFi selector
+-- description:         
+homepage:            https://github.com/ziman/wlist
+license:             BSD3
+license-file:        LICENSE
+author:              Matus Tejiscak
+maintainer:          ziman@functor.sk
+-- copyright:           
+-- category:            
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+executable wlist
+  main-is:             Main.hs
+  other-modules:       Parser
+  build-depends:
+    base, process, containers
+  default-language:    Haskell2010
+  default-extensions:
+    RecordWildCards

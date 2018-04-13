@@ -1,6 +1,4 @@
 #!/usr/bin/env runhaskell
-
-{-# LANGUAGE RecordWildCards #-}
 import Parser
 
 import Data.Ord
