@@ -26,15 +26,18 @@ optParserInfo = Opts.info (optParser <**> Opts.helper)
     <> Opts.progDesc "Select WiFi network on IFACE"
     <> Opts.header "wlist - WiFi network selector")
 
-type Essids = M.Map String [AP]
+type Essids = M.Map String [(Int, AP)]
 
 groupEssids :: [AP] -> Essids
-groupEssids = foldr (\ap -> M.insertWith (++) (apEssid ap) [ap]) M.empty
+groupEssids = foldr (\(i,ap) -> M.insertWith (++) (apEssid ap) [(i,ap)]) M.empty . zip [1..]
 
-fmtItem :: (String, [AP]) -> [String]
+fmtItem :: (String, [(Int, AP)]) -> [String]
 fmtItem (essid, aps) = essid : map ("  " ++) subs
   where
-    subs = [apBssid ++ " " ++ show apSignal | AP{..} <- sortBy (comparing apSignal) aps]
+    subs =
+        [ show i ++ ". " ++ apBssid ++ " " ++ show apSignal
+        | (i, AP{..}) <- sortBy (comparing $ apSignal . snd) aps
+        ]
 
 main :: IO ()
 main = do
