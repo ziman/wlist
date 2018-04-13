@@ -55,7 +55,7 @@ fmtItem (essid, aps) = essid : map ("  " ++) subs
 connectTo :: Options -> (SSID, AP) -> IO ()
 connectTo Options{..} (ssid, AP{..}) = do
     putStrLn $ "connecting to " ++ ssid ++ " - " ++ apBssid
-    rawSystem "dhcpcd" ["-k", optIface]  -- like callProcess, won't throw errors on failure
+    rawSystem "dhcpcd" ["-k", optIface]  -- like callProcess; won't throw errors on failure
     callProcess "iw" [optIface, "connect", ssid, apBssid]
     callProcess "dhcpcd" [optIface]
 
