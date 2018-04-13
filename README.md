@@ -3,5 +3,8 @@
 ## Synopsis
 
 ```bash
-$ ip link set wl0 up && iw wl0 scan | runhaskell Main.hs
+$ stack build
+$ stack install
+$ wlist wlan0
+$ iw wlan0 connect $ESSID [$BSSID]
 ```
