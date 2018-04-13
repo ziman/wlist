@@ -8,6 +8,7 @@ import qualified Data.Map as M
 
 import qualified Options.Applicative as Opts
 import Options.Applicative ((<**>))
+import System.IO
 import System.Process
 
 data Options = Options
@@ -26,17 +27,25 @@ optParserInfo = Opts.info (optParser <**> Opts.helper)
     <> Opts.progDesc "Select WiFi network on IFACE"
     <> Opts.header "wlist - WiFi network selector")
 
-type Essids = M.Map String [(Int, AP)]
+type Essid ap = (String, [ap])
 
-groupEssids :: [AP] -> Essids
-groupEssids = foldr (\(i,ap) -> M.insertWith (++) (apEssid ap) [(i,ap)]) M.empty . zip [1..]
+groupEssids :: [AP] -> M.Map String [AP]
+groupEssids = foldr (\ap -> M.insertWith (++) (apEssid ap) [ap]) M.empty
 
-fmtItem :: (String, [(Int, AP)]) -> [String]
+arrange :: [Essid AP] -> [Essid (Int, AP)]
+arrange = go 1
+  where
+    go n [] = []
+    go n ((essid, aps) : rest) =
+        (essid, zip [n..] . reverse $ sortBy (comparing apSignal) aps)
+        : go (n + length aps) rest
+
+fmtItem :: Essid (Int, AP) -> [String]
 fmtItem (essid, aps) = essid : map ("  " ++) subs
   where
     subs =
-        [ show i ++ ". " ++ apBssid ++ " " ++ show apSignal
-        | (i, AP{..}) <- sortBy (comparing $ apSignal . snd) aps
+        [ show i ++ ": " ++ show apSignal ++ "    " ++ apBssid
+        | (i, AP{..}) <- aps
         ]
 
 main :: IO ()
@@ -44,4 +53,9 @@ main = do
     opts@Options{..} <- Opts.execParser optParserInfo
     callProcess "ip" ["link", "set", optIface, "up"]
     essids <- groupEssids . parse <$> readProcess "iw" [optIface, "scan"] ""
-    putStr . unlines . concatMap fmtItem $ M.toList essids
+    putStr . unlines . concatMap fmtItem . arrange $ M.toList essids
+
+    putStr "pick your wifi > "
+    hFlush stdout
+    resp <- getLine
+    return ()
