@@ -55,14 +55,15 @@ fmtItem (essid, aps) = essid : map ("  " ++) subs
 connectTo :: Options -> (SSID, AP) -> IO ()
 connectTo Options{..} (ssid, AP{..}) = do
     putStrLn $ "connecting to " ++ ssid ++ " - " ++ apBssid
-    callProcess "dhcpcd" ["-k", optIface]
-    callProcess "iw" [optIface, "connect", ssid, apBssid]
-    callProcess "dhcpcd" [optIface]
+    rawSystem "dhcpcd" ["-k", optIface]
+    rawSystem "iw" [optIface, "connect", ssid, apBssid]
+    rawSystem "dhcpcd" [optIface]
+    return ()
 
 main :: IO ()
 main = do
     opts@Options{..} <- Opts.execParser optParserInfo
-    callProcess "ip" ["link", "set", optIface, "up"]
+    rawSystem "ip" ["link", "set", optIface, "up"]
     essids <- arrange . M.toList . groupEssids . parse 
         <$> readProcess "iw" [optIface, "scan"] ""
     putStr . unlines . concatMap fmtItem $ essids
